@@ -1,0 +1,74 @@
+blueprint:
+  name: Motion Sensor
+  description: Automate actions using Motion Sensor
+  domain: automation
+  input:
+    motion_entity:
+      name: Motion Sensor
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: motion
+    motion_on_action:
+      name: ON Action
+      description: When motion state is off to on
+      default: []
+      selector:
+        action: {}
+    motion_off_action:
+      name: OFF Action
+      description: When motion state is on to off
+      default: []
+      selector:
+        action: {}
+    delay_time:
+      name: Delay time
+      description: After motion turned off, delay time until execute OFF Action
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+    time_on:
+      name: (Optional) ON time
+      description: Time condition to start automation
+      default: 0:00:00
+      selector:
+        time: {}
+    time_off:
+      name: (Optional) OFF time
+      description: Time condition to stop automation
+      default: 0:00:00
+      selector:
+        time: {}
+
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input motion_entity
+    from: 'off'
+    to: 'on'
+condition:
+- condition: time
+  after: !input time_on
+  before: !input time_off
+
+action:
+- choose:
+  - conditions:
+      - condition: []
+    sequence: !input motion_on_action
+- wait_for_trigger:
+    platform: state
+    entity_id: !input motion_entity
+    from: 'on'
+    to: 'off'
+- delay: !input delay_time
+- choose:
+  - conditions:
+      - condition: []
+    sequence: !input motion_off_action
